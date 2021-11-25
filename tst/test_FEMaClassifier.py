@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import Tuple
 
 sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
 
@@ -36,5 +37,5 @@ plt.plot(pred,c='r')
 plt.plot(test_y,c='b')
 plt.show()
 
-print(mean_absolute_percentage_error(test_y,pred))
+print((test_y,pred))
 
