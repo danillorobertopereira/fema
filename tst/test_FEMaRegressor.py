@@ -27,7 +27,7 @@ train_x = scaler.fit_transform(train_x)
 test_x = scaler.transform(test_x)
 
 
-model = fema_regression.FEMaRegressor(train_x,train_y,3,basis=fema_regression.Basis.radialBasis)
+model = fema_regression.FEMaRegressor(train_x,train_y,5,basis=fema_regression.Basis.radialBasis)
 
 pred = model.predict(test_x,2)
 
