@@ -57,7 +57,7 @@ class FEMaClassifier:
         for i in range(self.num_classes):
             self.probability_classes[i,:] = train_y[:,0] == i
 
-        print(self.probability_classes)
+        
             
     def predict(self, test_x:np.array, *args) -> Tuple[np.array, np.array]:
         """Returns the prediction of the test set and store the
@@ -70,10 +70,14 @@ class FEMaClassifier:
             np.array: Prediction of the test set
         """    
         num_test_samples = len(test_x)
-        confidence_level = np.array((num_test_samples, self.num_classes))
+        labels = np.zeros(num_test_samples)
+        confidence_level = np.zeros((num_test_samples, self.num_classes))
 
         for i in range(num_test_samples):
             for c in range(self.num_classes):
                 confidence_level[i,c] = self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0])
+            labels[i] = np.argmax(confidence_level[i,:])
 
-        print(confidence_level)
+        return labels, confidence_level
+
+        
