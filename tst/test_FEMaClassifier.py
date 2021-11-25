@@ -31,11 +31,8 @@ test_x = scaler.transform(test_x)
 model = fema_classifier.FEMaClassifier(k=2,basis=fema_classifier.Basis.radialBasis)
 model.fit(train_x,train_y)
 
-pred = model.predict(test_x,10)
+pred, confidence_level = model.predict(test_x,10)
 
-plt.plot(pred,c='r')
-plt.plot(test_y,c='b')
-plt.show()
 
-print((test_y,pred))
+print(confusion_matrix(test_y,pred))
 
