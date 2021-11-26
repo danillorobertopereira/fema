@@ -36,5 +36,11 @@ eval_x = scaler.transform(test_x)
 
 
 model_fl = fema_feature_learning.FEMaFeatureLearning(k=2,basis=fema_classifier.Basis.radialBasis)
+features_weigths = model_fl.fit(train_x, train_y, eval_x, eval_y)
 
-model_fl.fit(train_x, train_y, eval_x, eval_y)
+
+for c in range(len(df[target].unique())):
+    df_aux = df.copy()
+
+    model_fema_original =
+    model_fema
