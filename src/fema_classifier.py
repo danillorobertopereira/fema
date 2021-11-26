@@ -16,7 +16,7 @@ from fem_basis import Basis
    
 class FEMaClassifier:
     """
-    Class responsible to perform the regression using FEMa approach
+    Class responsible to perform the classification using FEMa approach
     """
     def __init__(self):
         self.train_x = None
@@ -46,6 +46,12 @@ class FEMaClassifier:
         self.probability_classes = None
 
     def fit(self, train_x:np.array, train_y:np.array) -> None:
+        """Method responsible to create the manifold learning probabilities
+
+        Args:
+            train_x (np.array): Features of the training set
+            train_y (np.array): Class of the training set
+        """
         self.train_x = train_x
         self.train_y = train_y
         self.num_train_samples = len(train_y)
@@ -74,8 +80,7 @@ class FEMaClassifier:
         confidence_level = np.zeros((num_test_samples, self.num_classes))
 
         for i in range(num_test_samples):
-            for c in range(self.num_classes):
-                confidence_level[i,c] = self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0])
+            confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
             labels[i] = np.argmax(confidence_level[i,:])
 
         return labels, confidence_level
