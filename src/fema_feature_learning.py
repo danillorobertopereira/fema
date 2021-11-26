@@ -20,7 +20,7 @@ class FEMaFeatureLearning:
     """
     Class responsible to learn the main features for classification
     problems
-    """"
+    """
 
     def __init__(self) -> None:
         self.train_x = None
