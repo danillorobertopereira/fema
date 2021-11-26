@@ -68,12 +68,19 @@ class FEMaFeatureLearning:
 
 
         for c in range(self.num_classes):                        
-            mask_inter = (self.train_y != c)
-            mask_intra = np.logical_not(mask_inter)
+            
+            mask_inter = (self.train_y[:,0] != c)
+            mask_intra = (self.train_y[:,0] == c)
+            
+            
 
             for f in range(self.num_features):            
-                features_inter = train_x[mask_inter][:,f]
+                print(c,f)
+                features_inter = train_x[mask_inter][:,f]                
                 features_intra = train_x[mask_intra][:,f]
+
+                features_inter = features_inter.reshape(-1,1)
+                features_intra = features_intra.reshape(-1,1)
 
                 dist_intra = euclidean_distances(features_intra,features_intra).mean()
                 dist_inter = euclidean_distances(features_inter,features_intra).mean()

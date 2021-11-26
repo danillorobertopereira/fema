@@ -52,6 +52,8 @@ class FEMaClassifier:
             train_x (np.array): Features of the training set
             train_y (np.array): Class of the training set
         """
+
+        #TODO: Put the probability manifold learning concept 
         self.train_x = train_x
         self.train_y = train_y
         self.num_train_samples = len(train_y)
