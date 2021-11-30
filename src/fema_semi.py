@@ -77,7 +77,7 @@ class FEMaSemiSupervisedClassifier:
 
         for i in range(self.num_uknw_samples):
             self.uknw_confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=self.uknw_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
-            self.uknw_yhat[i] = np.argmax(self.uknw_confidence_level[i,:])
+            #self.uknw_yhat[i] = np.argmax(self.uknw_confidence_level[i,:])
 
         
             
@@ -90,12 +90,14 @@ class FEMaSemiSupervisedClassifier:
         Returns:
             Tuple[np.array, np.array]: [description]
         """
+        new_train_x = np.append(self.train_x, self.uknw_x,axis=0)        
+        new_probability_classes = np.append(self.probability_classes,self.uknw_confidence_level,axis=0)
         num_test_samples = len(test_x)
         labels = np.zeros(num_test_samples)
         confidence_level = np.zeros((num_test_samples, self.num_classes))
 
         for i in range(num_test_samples):
-            confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
+            confidence_level[i,:] = [self.basis(train_x=new_train_x, train_y=new_probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
             labels[i] = np.argmax(confidence_level[i,:])
 
         return labels, confidence_level
