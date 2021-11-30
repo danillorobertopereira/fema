@@ -87,4 +87,38 @@ class FEMaClassifier:
 
         return labels, confidence_level
 
+    def FEMaRelax(self, test_x:np.array, k_relax:int, num_repeats:int) -> np.array:
+        train_x_cp = self.train_x.copy()
+        test_x_cp = test_x.copy() 
+
+        for r in range(num_repeats):
+            for i in range(self.num_train_samples):
+                dist_train = np.array(
+                        [
+                            np.linalg.norm(train_x_cp[j]-train_x_cp[i]) for j in range(len(train_x_cp))
+                        ]
+                    )
+                
+                index_k_relax_train = np.argsort(dist_train)[1:k_relax+1]                
+                signal_train = [+1 if self.train_y[i] == self.train_y[index_k_relax_train[j]] else -1  for j in range(len(index_k_relax_train))]
+                
+                train_x_cp[i] = (train_x_cp[index_k_relax_train]*signal_train)/len(index_k_relax_train)
+
+            for i in range(len(test_x)):
+                dist_test = np.array(
+                        [
+                            np.linalg.norm(train_x_cp[j]-test_x_cp[i]) for j in range(len(train_x_cp))
+                        ]
+                    )
+                
+                index_k_relax_test = np.argsort(dist_test)[1:k_relax+1]                
+                
+                test_x_cp[i] = np.mean(train_x_cp[index_k_relax_train],axis=0)
+                
+
+        return train_x_cp, test_x_cp
+
+
+
+
         

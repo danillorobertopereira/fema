@@ -21,6 +21,8 @@ class FEMaFeatureLearning:
     Class responsible to learn the main features for classification
     problems
     """
+    INTER = 0
+    INTRA = 1
 
     def __init__(self) -> None:
         self.train_x = None
@@ -58,13 +60,15 @@ class FEMaFeatureLearning:
         self.eval_x = eval_x
         self.eval_y = eval_y
         self.num_train_samples = len(train_y)
-        self.num_features = self.train_x.shape[1]
+        self.num_features = train_x.shape[1]
         self.num_classes = len(set(train_y[:,0]))
         self.num_eval_samples = len(eval_y)
-        self.features_weigth = np.zeros((self.num_classes, self.num_features))
+        #One weigth for Intra and another for Inter
+        self.features_weigth = np.zeros((2,self.num_classes, self.num_features))
 
         
         #TODO: We need improve the model considering the matrix of classes instead class vector       
+        #TODO: Insert the manifold probabilistic in the model
 
 
         for c in range(self.num_classes):                        
@@ -74,8 +78,7 @@ class FEMaFeatureLearning:
             
             
 
-            for f in range(self.num_features):            
-                print(c,f)
+            for f in range(self.num_features):                            
                 features_inter = train_x[mask_inter][:,f]                
                 features_intra = train_x[mask_intra][:,f]
 
@@ -85,6 +88,8 @@ class FEMaFeatureLearning:
                 dist_intra = euclidean_distances(features_intra,features_intra).mean()
                 dist_inter = euclidean_distances(features_inter,features_intra).mean()
 
-                self.features_weigth[c,f] = dist_inter/dist_intra
+                self.features_weigth[self.INTER ,c, f] = dist_inter
+                self.features_weigth[self.INTRA ,c, f] = dist_intra
 
         return self.features_weigth            
+
