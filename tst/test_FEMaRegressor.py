@@ -27,10 +27,10 @@ train_x = scaler.fit_transform(train_x)
 test_x = scaler.transform(test_x)
 
 
-model = fema_regression.FEMaRegressor(k=2,basis=fema_regression.Basis.radialBasis)
+model = fema_regression.FEMaRegressor(k=1,basis=fema_regression.Basis.radialBasis)
 model.fit(train_x,train_y)
 
-pred = model.predict(test_x,10)
+pred = model.predict(test_x,3)
 
 plt.plot(pred,c='r')
 plt.plot(test_y,c='b')
