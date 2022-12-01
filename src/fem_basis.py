@@ -8,7 +8,7 @@ class Basis:
 
     def shepardBasis(train_x:np.array, train_y:np.array, test_one_sample:np.array, k:int, z:int ) -> float:
         """Compute the weigths of the interpolation considering the Shepard 
-        basis and return the predicted value.
+        basis and return the predicted value
 
         Args:
             train_x (np.array): The feature of the training set
