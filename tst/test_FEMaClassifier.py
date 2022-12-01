@@ -12,6 +12,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 
+def set_action_outputs(output_pairs) :
+    """Sets the GitHub Action outputs.
+
+    Keyword arguments:
+    output_pairs - Dictionary of outputs with values
+    """
+    if "GITHUB_OUTPUT" in os.environ :
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f :
+            for key, value in output_pairs.items() :
+                print("{0}={1}".format(key, value), file=f)
+
 
 df = pd.read_csv('C:\\Users\\coton\\Desktop\\github\\fema\\data\\classificationData.csv',sep=';')
 
