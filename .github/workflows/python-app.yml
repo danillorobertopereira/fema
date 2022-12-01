@@ -1,3 +1,6 @@
+name: Set output
+  run: echo "{name}={value}" >> $GITHUB_OUTPUT
+
 name: Python application
 
 on:
