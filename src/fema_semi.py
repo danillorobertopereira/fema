@@ -5,7 +5,7 @@ from typing import Tuple
 from numpy.random.mtrand import random
 
 
-sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
+#sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
 
 
 import numpy as np
