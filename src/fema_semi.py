@@ -49,7 +49,7 @@ class FEMaSemiSupervisedClassifier:
         self.basis = basis
         self.probability_classes = None
 
-    def fit(self, train_x:np.array, train_y:np.array, uknw_x:np.array, uknw_y:np.array=None, *args) -> None:
+    def fit(self, train_x:np.array, train_y:np.array, uknw_x:np.array, *args) -> None:
         """AI is creating summary for fit
 
         Args:
@@ -61,7 +61,6 @@ class FEMaSemiSupervisedClassifier:
         self.train_x = train_x
         self.train_y = train_y
         self.uknw_x = uknw_x
-        self.uknw_y = uknw_y
         self.num_train_samples = len(train_y)
         self.num_uknw_samples = uknw_x.shape[0]
         self.num_features = self.train_x.shape[1]
@@ -72,12 +71,15 @@ class FEMaSemiSupervisedClassifier:
         for i in range(self.num_classes):
             self.probability_classes[i,:] = train_y[:,0] == i
 
+        print(self.num_uknw_samples, self.num_classes)
+        
         self.uknw_yhat = np.zeros(self.num_uknw_samples)
         self.uknw_confidence_level = np.zeros((self.num_uknw_samples, self.num_classes))
 
         for i in range(self.num_uknw_samples):
             self.uknw_confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=self.uknw_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
-            #self.uknw_yhat[i] = np.argmax(self.uknw_confidence_level[i,:])
+            #self.uknw_confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[0], test_one_sample=self.uknw_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
+            self.uknw_yhat[i] = np.argmax(self.uknw_confidence_level[i,:])
 
         
             
@@ -90,8 +92,13 @@ class FEMaSemiSupervisedClassifier:
         Returns:
             Tuple[np.array, np.array]: [description]
         """
-        new_train_x = np.append(self.train_x, self.uknw_x,axis=0)        
-        new_probability_classes = np.append(self.probability_classes,self.uknw_confidence_level,axis=0)
+
+        #print('X:',self.train_x.shape, self.uknw_x.shape)
+        #print('Prob and Conf',self.probability_classes.shape,self.uknw_confidence_level.transpose().shape)
+        new_train_x = np.append(self.train_x, self.uknw_x,axis=0)
+        #print('New Train X',new_train_x.shape)       
+        new_probability_classes = np.append(self.probability_classes,self.uknw_confidence_level.transpose(),axis=1)
+        #print(new_probability_classes.shape)
         num_test_samples = len(test_x)
         labels = np.zeros(num_test_samples)
         confidence_level = np.zeros((num_test_samples, self.num_classes))

@@ -2,7 +2,7 @@ import sys
 import os
 from typing import Tuple
 
-sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
+sys.path.append('/home/danillorp/Área de Trabalho/github/fema/src/')
 
 
 import fema_classifier
@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 
 
-df = pd.read_csv('C:\\Users\\coton\\Desktop\\github\\fema\\data\\classificationData.csv',sep=';')
+df = pd.read_csv('/home/danillorp/Área de Trabalho/github/fema/data/classificationData.csv',sep=';')
 
 features = ['A', 'B', 'C']	
 target = ['class']

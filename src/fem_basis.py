@@ -36,7 +36,7 @@ class Basis:
 
         predicted = np.sum(weitghs*train_y[mask])
 
-        print(predicted.shape)
+        #print(predicted.shape)
         
         if math.isnan(predicted):
             predicted = np.mean(train_y)

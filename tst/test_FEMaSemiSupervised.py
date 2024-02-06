@@ -2,7 +2,7 @@ import sys
 import os
 from typing import Tuple
 
-sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
+sys.path.append('/home/danillorp/Área de Trabalho/github/fema/src/')
 
 
 import fema_semi
@@ -16,7 +16,8 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('C:\\Users\\coton\\Desktop\\github\\fema\\data\\fetal_health.csv').reset_index()
+df = pd.read_csv('/home/danillorp/Área de Trabalho/github/fema/data/fetal_health.csv').reset_index()
+
 
 features = [
             'baseline value', 'accelerations', 'fetal_movement',
