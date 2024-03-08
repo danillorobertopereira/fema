@@ -70,8 +70,9 @@ class FEMaFeatureLearning:
         #TODO: We need improve the model considering the matrix of classes instead class vector       
         #TODO: Insert the manifold probabilistic in the model
 
-
-        for c in range(self.num_classes):                        
+        
+        for c in range(self.num_classes):         
+            print('Running: ',c/self.num_classes,' concluded.')               
             
             mask_inter = (self.train_y[:,0] != c)
             mask_intra = (self.train_y[:,0] == c)
