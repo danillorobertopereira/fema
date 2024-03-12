@@ -77,8 +77,6 @@ class FEMaFeatureLearning:
             mask_inter = (self.train_y[:,0] != c)
             mask_intra = (self.train_y[:,0] == c)
             
-            
-
             for f in range(self.num_features):                            
                 features_inter = train_x[mask_inter][:,f]                
                 features_intra = train_x[mask_intra][:,f]
