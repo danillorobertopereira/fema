@@ -81,8 +81,37 @@ class FEMaSemiSupervisedClassifier:
             #self.uknw_confidence_level[i,:] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[0], test_one_sample=self.uknw_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
             self.uknw_yhat[i] = np.argmax(self.uknw_confidence_level[i,:])
 
-        
-            
+        #To avoid lost the original confidence level after round or play    
+        self.uknw_confidence_level_ori = self.uknw_confidence_level.copy()
+
+
+    def playProbabilities(self) -> None:
+        """
+        Assigns confidence level probabilities 1 to unknown samples for majority class.
+
+        This method iterates over the unknown samples and sets the confidence level of each predicted class to 1.
+
+        Returns:
+        None
+        """
+        self.uknw_confidence_level = self.uknw_confidence_level_ori.copy()
+        u,_ = np.unique(self.uknw_yhat)
+        print(u)
+        for i in range(self.num_uknw_samples):
+            self.uknw_confidence_level[i,int(self.uknw_yhat[i])] = 1
+        return    
+
+
+    def roundProbabilities(self) -> None:
+        """
+        Round confidence level probabilities to unknown samples
+        Returns:
+        None
+        """
+        self.uknw_confidence_level = np.rint(self.uknw_confidence_level_ori)
+        return    
+
+
     def predict(self, test_x:np.array, *args) -> Tuple[np.array, np.array]:
         """AI is creating summary for predict
 
