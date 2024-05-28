@@ -18,7 +18,7 @@ def main():
     
     N = 100
     dimensions = 2
-    points = clustering.generate_random_points(bounds=[(0,1000),(0,1000)],num_points=N)
+    points = clustering.generate_random_points(bounds=[(0,200),(0,200)],num_points=N)
     #clustering.plot_points(points)
 
     clustering.fit(points)

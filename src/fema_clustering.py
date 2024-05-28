@@ -132,7 +132,7 @@ class FEMaClustering:
 
         self.weight_matrix = np.zeros((self.qtd_samples, self.qtd_samples))
         
-        random_points = self.generate_random_points(bounds=bounds, num_points=2*self.qtd_samples)
+        random_points = self.generate_random_points(bounds=bounds, num_points=int(self.qtd_samples/1))
         self.random_samples = self.filter_nearby_points(random_points=random_points, reference_points=self.samples, min_distance=self.min_distance)
 
         self.all_samples = np.concatenate((self.samples, self.random_samples))
