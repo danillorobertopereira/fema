@@ -240,10 +240,16 @@ class FEMaClustering:
                     self.dist_matrix[i,j] = 1
                     self.dist_matrix[j,i] = 1
 
-        return self.dist_matrix
-    
+        # Expandir a matriz de adjacência
+        expanded_matrix = self.expand_adjacency_matrix(self.dist_matrix)
 
 
+        for i in range(10):
+            self.expanded_matrix = self.expand_adjacency_matrix(self.expanded_matrix)
+
+        self.labels = self.label_connected_components()
+
+        return self.labels
 
 """
 def main():
