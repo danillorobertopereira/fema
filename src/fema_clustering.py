@@ -185,7 +185,7 @@ class FEMaClustering:
         return self.labels
 
 
-    def fit(self, samples: np.ndarray, min_distance: float = 5):
+    def fit(self, samples: np.ndarray, min_distance: float = 10):
         self.min_distance = min_distance
         self.qtd_samples = samples.shape[0]
         self.dim = samples.shape[1]
@@ -200,7 +200,7 @@ class FEMaClustering:
 
         return
     
-    def predict(self, th_same_cluster: float = 0.9, qtd_diff_samples: float = 50):
+    def predict(self, th_same_cluster: float = 0.75, qtd_diff_samples: float = 50):
         
         self.qtd_diff_samples = qtd_diff_samples
         self.th_same_cluster = th_same_cluster
@@ -239,42 +239,3 @@ class FEMaClustering:
         return self.labels
 
 
-def main():
-    clustering = FEMaClustering(z=2)
-    
-    N = 40
-    dimensions = 2
-    points = clustering.generate_random_points(bounds=[(0,100),(0,100)],num_points=N)
-    #clustering.plot_points(points)
-
-    clustering.fit(points)
-    
-    # Plotar pontos
-    plt.figure(figsize=(8, 6))
-    plt.scatter(clustering.samples[:,0], clustering.samples[:,1], color='blue', label='Nuvem de Pontos Inicial (NP)')
-    plt.scatter(clustering.random_samples[:,0], clustering.random_samples[:,1], color='red', label='Pontos Aleatórios')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Nuvem de Pontos Inicial com Pontos Aleatórios')
-    #plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-    print(clustering.predict())
-
-    fig, ax = plt.subplots()
-
-    # Plot the generated points
-    ax.scatter(points[:, 0], points[:, 1], c=clustering.labels, marker='o', edgecolors='black')
-    ax.grid(True)
-
-    for i, txt in enumerate(range(N)):
-        ax.annotate(clustering.labels[i], (points[i,0], points[i,1]))
-
-    plt.show()
-
-
-
-if __name__ == "__main__":
-    main()
