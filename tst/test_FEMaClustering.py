@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def main():
     clustering = FEMaClustering(z=2)
     
-    N = 40
+    N = 30
     dimensions = 2
     points = clustering.generate_random_points(bounds=[(0,100),(0,100)],num_points=N)
     #clustering.plot_points(points)
@@ -35,7 +35,7 @@ def main():
     plt.show()
 
 
-    print(clustering.predict())
+    print(clustering.predict(th_same_cluster=0.85))
 
     fig, ax = plt.subplots()
 
