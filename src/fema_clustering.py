@@ -19,7 +19,7 @@ import fema_classifier
 
 
 class FEMaClustering:
-    def __init__(self, z: float = 2, sBasis=Basis.shepardBasis):
+    def __init__(self, z: float = 2, basis=Basis.shepardBasis):
         self.z = z
         self.dim = None
         self.qtd_samples = None
@@ -32,7 +32,7 @@ class FEMaClustering:
         self.random_samples = None
         self.all_samples = None
         self.labels = None
-        self.basis = Basis(z)
+        self.basis = basis
         self.qtd_diff_samples = None     
         self.th_same_cluster = None
         self.min_distance = None
@@ -92,9 +92,7 @@ class FEMaClustering:
             else:
                 self.conquested[i] = i
 
-    def label_clusters(self, points: np.ndarray):
-        self.plot_points(points, self.conquested)
-
+    
     def generate_random_points(self, bounds: List[Tuple[float, float]], num_points: int) -> np.ndarray:
         """
         Generate random points within specified bounds for each dimension.
@@ -149,7 +147,7 @@ class FEMaClustering:
         for i in range(self.dim):
             bounds.append((min(samples[:, i]), max(samples[:, i])))
 
-        self.set_bounds(bounds=bounds) 
+        self.bounds=bounds.copy() 
 
         self.weight_matrix = np.zeros((self.qtd_samples, self.qtd_samples))
         
@@ -209,7 +207,7 @@ class FEMaClustering:
 
         self.dist_matrix = np.zeros((self.qtd_samples,self.qtd_samples))
 
-        self.model = fema_classifier.FEMaClassifier(k=10,basis=fema_classifier.Basis.shepardBasis)
+        self.model = fema_classifier.FEMaClassifier(k=10,basis=self.basis)
         self.model.fit(self.all_samples,self.labels.reshape((len(self.labels),1)))
 
         return
@@ -251,19 +249,18 @@ class FEMaClustering:
 
         return self.labels
 
-"""
+
 def main():
     clustering = FEMaClustering(z=2)
     
     N = 20
     dimensions = 2
-    points = clustering.generate_random_points(N, dimensions)
-    clustering.plot_points(points)
+    points = clustering.generate_random_points(bounds=[(0,100),(0,100)],num_points=N)
+    #clustering.plot_points(points)
 
-    clustering.calculate_matrices(points)
-    clustering.determine_conquest(points)
-    clustering.label_clusters(points)
+    clustering.fit(points)
+    clustering.predict(points)
+
 
 if __name__ == "__main__":
     main()
-"""
