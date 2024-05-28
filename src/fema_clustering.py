@@ -8,27 +8,36 @@ from numpy.random.mtrand import random
 sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
 
 
-import numpy as np
 import math 
-
-from fem_basis import Basis    
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple, List
+from collections import deque
+
+from fem_basis import Basis  
+import fema_classifier
+
 
 class FEMaClustering:
-    def __init__(self, z: float = 2, samples=None, Basis=Basis.shepardBasis):
+    def __init__(self, z: float = 2, sBasis=Basis.shepardBasis):
         self.z = z
+        self.dim = None
+        self.qtd_samples = None
         self.dist_matrix = None
         self.weight_matrix = None
         self.conquest = None
         self.conquested = None
         self.splited = None
-        self.samples = samples
+        self.samples = None
+        self.random_samples = None
+        self.all_samples = None
+        self.labels = None
         self.basis = Basis(z)
-
-    def generate_random_points(self, n_points: int, dimensions: int = 2) -> np.ndarray:
-        return np.random.rand(n_points, dimensions) * 100
+        self.qtd_diff_samples = None     
+        self.th_same_cluster = None
+        self.min_distance = None
+        self.model = None
+        self.expand_matrix = None
 
     def plot_points(self, points: np.ndarray, labels: np.ndarray = None):
         if points.shape[1] == 2:
@@ -131,7 +140,111 @@ class FEMaClustering:
         """
         return np.array(lists)
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None):
+    def atribute_all_samples_and_labels(self, samples: np.ndarray):
+        self.samples = samples
+        self.dim = samples.shape[1]
+        self.qtd_samples = samples.shape[0]
+
+        bounds = []
+        for i in range(self.dim):
+            bounds.append((min(samples[:, i]), max(samples[:, i])))
+
+        self.set_bounds(bounds=bounds) 
+
+        self.weight_matrix = np.zeros((self.qtd_samples, self.qtd_samples))
+        
+        random_points = self.generate_random_points(bounds=bounds, num_points=2*self.qtd_samples)
+        self.random_samples = self.filter_nearby_points(random_points=random_points, reference_points=self.samples, min_distance=self.min_distance)
+
+        self.all_samples = np.concatenate((self.samples, self.random_samples))
+
+        self.labels = np.zeros(self.all_samples.shape[0],dtype=int)
+        self.labels[:samples.shape[0]] = 1
+        self.labels[samples.shape[0]:] = 0
+
+        return
+
+    def expand_adjacency_matrix(self, ref_matrix:np.ndarray):
+        
+        self.expanded_matrix = np.zeros((self.qtd_samples, self.qtd_samples))
+    
+        # Conectar cada vértice aos seus vizinhos e aos vizinhos dos vizinhos
+        for i in range(self.qtd_samples):
+            for j in range(self.qtd_samples):
+                if ref_matrix[i, j] != 0:
+                    self.expanded_matrix[i, j] = 1  # Conectar vértice aos vizinhos
+                    for k in range(self.qtd_samples):
+                        if ref_matrix[j, k] != 0 and k != i:
+                            self.expanded_matrix[i, k] = 1  # Conectar vértice aos vizinhos dos vizinhos
+
+
+    def label_connected_components(self):
+        visited = [False] * self.qtd_samples
+        labels = [-1] * self.qtd_samples  # Inicialmente, todos os vértices têm rótulo -1
+        current_label = 0
+
+        for vertex in range(self.qtd_samples):
+            if not visited[vertex]:
+                # Começar uma nova busca em largura a partir do vértice não visitado
+                bfs_queue = deque([vertex])
+                visited[vertex] = True
+
+                while bfs_queue:
+                    current_vertex = bfs_queue.popleft()
+                    labels[current_vertex] = current_label
+
+                    # Encontrar vizinhos não visitados e adicioná-los à fila
+                    for neighbor in range(self.qtd_samples):
+                        if self.expanded_matrix[current_vertex][neighbor] == 1 and not visited[neighbor]:
+                            bfs_queue.append(neighbor)
+                            visited[neighbor] = True
+
+                current_label += 1  # Atualizar o rótulo para o próximo conjunto de pontos interconectados
+
+        self.labels = labels
+
+
+    def fit(self, samples: np.ndarray, min_distance: float = 5):
+        self.atribute_all_samples_and_labels(samples=samples)
+
+        self.dist_matrix = np.zeros((self.qtd_samples,self.qtd_samples))
+
+        self.model = fema_classifier.FEMaClassifier(k=10,basis=fema_classifier.Basis.shepardBasis)
+        self.model.fit(self.all_samples,self.labels.reshape((len(self.labels),1)))
+
+        return
+    
+    def predict(self, test: np.ndarray, th_same_cluster: float = 0.9, qtd_diff_samples: float = 50):
+        
+        self.qtd_diff_samples = qtd_diff_samples
+        self.th_same_cluster = th_same_cluster
+
+        self.dist_matrix = np.zeros((self.qtd_samples,self.qtd_samples))
+
+        for i in range(self.qtd_samples):
+            for j in range(self.qtd_samples):
+                if i == j:
+                    self.dist_matrix[i,i] = 1
+                    continue
+                if i > j:
+                    continue
+                diff = (self.samples[i] - self.samples[j])/(self.qtd_diff_samples-1)
+                test_samples = np.zeros((self.qtd_diff_samples,2))
+                for k in range(self.qtd_diff_samples):
+                    test_samples[k] = (0.999*self.samples[i] - diff*k)
+                pred, prob = self.model.predict(test_samples,3)
+                if len(pred[prob[:,1] < th_same_cluster]) > 0:
+                    self.dist_matrix[i,j] = 0
+                    self.dist_matrix[j,i] = 0
+                else:
+                    self.dist_matrix[i,j] = 1
+                    self.dist_matrix[j,i] = 1
+
+        return self.dist_matrix
+    
+
+
+
 """
 def main():
     clustering = FEMaClustering(z=2)
