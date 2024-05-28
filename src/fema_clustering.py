@@ -72,26 +72,7 @@ class FEMaClustering:
             self.weight_matrix[ind, :] = 1.0 / (self.dist_matrix[ind, :] ** self.z)
             self.weight_matrix[ind, :] /= sum(self.weight_matrix[ind, :] + 1**-20)
 
-    def determine_conquest(self, points: np.ndarray):
-        N = len(points)
-        self.conquest = np.zeros(N)
-        self.conquested = np.zeros(N)
-        self.splited = np.zeros(N)
-
-        for i in range(N):
-            self.conquest[i] = np.argsort(self.weight_matrix[i, :])[N - 1]
-            self.splited[i] = np.argsort(self.weight_matrix[i, :])[1]
-
-        for i in range(N):
-            if (i == int(self.conquest[int(self.conquest[i])])) and (i != int(self.splited[int(self.conquest[i])])):
-                if i <= int(self.conquest[i]):
-                    self.conquested[i] = i
-                    self.conquested[int(self.conquest[i])] = i
-                else:
-                    self.conquested[i] = i
-            else:
-                self.conquested[i] = i
-
+    
     
     def generate_random_points(self, bounds: List[Tuple[float, float]], num_points: int) -> np.ndarray:
         """
@@ -201,22 +182,30 @@ class FEMaClustering:
 
         self.labels = labels
 
+        return self.labels
+
 
     def fit(self, samples: np.ndarray, min_distance: float = 5):
+        self.min_distance = min_distance
+        self.qtd_samples = samples.shape[0]
+        self.dim = samples.shape[1]
         self.atribute_all_samples_and_labels(samples=samples)
 
+
         self.dist_matrix = np.zeros((self.qtd_samples,self.qtd_samples))
+        self.calculate_matrices(self.samples)    
 
         self.model = fema_classifier.FEMaClassifier(k=10,basis=self.basis)
         self.model.fit(self.all_samples,self.labels.reshape((len(self.labels),1)))
 
         return
     
-    def predict(self, test: np.ndarray, th_same_cluster: float = 0.9, qtd_diff_samples: float = 50):
+    def predict(self, th_same_cluster: float = 0.9, qtd_diff_samples: float = 50):
         
         self.qtd_diff_samples = qtd_diff_samples
         self.th_same_cluster = th_same_cluster
 
+        print(self.qtd_samples, self.dim)
         self.dist_matrix = np.zeros((self.qtd_samples,self.qtd_samples))
 
         for i in range(self.qtd_samples):
@@ -239,11 +228,11 @@ class FEMaClustering:
                     self.dist_matrix[j,i] = 1
 
         # Expandir a matriz de adjacência
-        expanded_matrix = self.expand_adjacency_matrix(self.dist_matrix)
+        self.expand_adjacency_matrix(self.dist_matrix)
 
 
         for i in range(10):
-            self.expanded_matrix = self.expand_adjacency_matrix(self.expanded_matrix)
+            self.expand_adjacency_matrix(self.expanded_matrix)
 
         self.labels = self.label_connected_components()
 
@@ -259,7 +248,7 @@ def main():
     #clustering.plot_points(points)
 
     clustering.fit(points)
-    clustering.predict(points)
+    clustering.predict()
 
 
 if __name__ == "__main__":
