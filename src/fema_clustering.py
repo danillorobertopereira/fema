@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import deque
 from numba import jit
+from scipy.spatial.distance import cdist
 
 sys.path.append('C:\\Users\\coton\\Desktop\\github\\fema\\src\\')
 from fem_basis import Basis  
@@ -16,7 +17,6 @@ class FEMaClustering:
         self.dim = None
         self.qtd_samples = None
         self.dist_matrix = None
-        self.weight_matrix = None
         self.conquest = None
         self.conquested = None
         self.splited = None
@@ -55,15 +55,12 @@ class FEMaClustering:
     def calculate_matrices(self, points: np.ndarray):
         N = len(points)
         self.dist_matrix = np.zeros((N, N))
-        self.weight_matrix = np.zeros((N, N))
         
         for ind, p in enumerate(points):
             dist = np.linalg.norm(points - p, axis=1)
             self.dist_matrix[ind, :] = dist
             self.dist_matrix[ind, ind] = np.inf  # Ignore self-distance
-            self.weight_matrix[ind, :] = 1.0 / (dist ** self.z)
-            self.weight_matrix[ind, :] /= np.sum(self.weight_matrix[ind, :] + 1e-20)
-
+        
     def generate_random_points(self, bounds: List[Tuple[float, float]], num_points: int) -> np.ndarray:
         points = np.random.uniform([b[0] for b in bounds], [b[1] for b in bounds], (num_points, len(bounds)))
         return points
@@ -75,7 +72,7 @@ class FEMaClustering:
     def lists_to_np_array(self, lists: List[List[float]]) -> np.ndarray:
         return np.array(lists)
 
-    def atribute_all_samples_and_labels(self, samples: np.ndarray, qtd_samples: int):
+    """def atribute_all_samples_and_labels(self, samples: np.ndarray, qtd_samples: int):
         self.samples = samples
         self.dim = samples.shape[1]
         self.qtd_samples = samples.shape[0]
@@ -89,7 +86,46 @@ class FEMaClustering:
         self.all_samples = np.concatenate((self.samples, self.random_samples))
         self.labels = np.zeros(self.all_samples.shape[0], dtype=int)
         self.labels[:samples.shape[0]] = 1
+    """
 
+    def atribute_all_samples_and_labels(self, samples: np.ndarray, qtd_samples: int):
+        self.samples = samples
+        self.dim = samples.shape[1]
+        self.qtd_samples = samples.shape[0]
+
+        bounds = [(min(samples[:, i]), max(samples[:, i])) for i in range(self.dim)]
+        self.bounds = bounds.copy()
+
+        def generate_random_point():
+            return np.array([np.random.uniform(low, high) for low, high in bounds])
+
+        random_samples = []
+        
+        for _ in range(qtd_samples):
+            max_min_distance = -np.inf
+            best_point = None
+            
+            # Sample a large number of candidate points
+            candidate_points = np.array([generate_random_point() for _ in range(10*qtd_samples)])
+            
+            # Calculate distances from candidate points to all existing and new points
+            all_points = np.vstack([samples] + random_samples)
+            distances = cdist(candidate_points, all_points, metric='euclidean')
+            
+            # Find the candidate point that maximizes the minimum distance to all existing points
+            min_distances = distances.min(axis=1)
+            best_idx = min_distances.argmax()
+            best_point = candidate_points[best_idx]
+            
+            random_samples.append(best_point)
+    
+            self.random_samples = random_samples.copy()
+
+            self.all_samples = np.concatenate((self.samples, self.random_samples))
+            self.labels = np.zeros(self.all_samples.shape[0], dtype=int)
+            self.labels[:samples.shape[0]] = 1
+
+    
     def expand_adjacency_matrix(self, ref_matrix: np.ndarray):
         N = ref_matrix.shape[0]
         self.expanded_matrix = np.copy(ref_matrix)
