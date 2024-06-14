@@ -3,7 +3,7 @@ import os
 from typing import Tuple
 import numpy as np
 import math 
-from numba import jit
+from multiprocessing import Pool, cpu_count
 from fem_basis import Basis  # Certifique-se de que este módulo está corretamente importado
 
 class FEMaClassifier:
@@ -62,10 +62,9 @@ class FEMaClassifier:
             confidence_level[i, :] = [self.basis(train_x=self.train_x, train_y=self.probability_classes[c], test_one_sample=test_x[i], k=self.k, z=args[0]) for c in range(self.num_classes)]
             labels[i] = np.argmax(confidence_level[i, :])
 
+
         return labels, confidence_level
 
-    @staticmethod
-    @jit(nopython=True, parallel=True)
     def FEMaRelax(train_x: np.array, train_y: np.array, test_x: np.array, k_relax: int, num_repeats: int) -> np.array:
         train_x_cp = train_x.copy()
         test_x_cp = test_x.copy()
