@@ -16,7 +16,7 @@ import torch
 from typing import Tuple
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
-#from pyinstrument import Profiler
+from pyinstrument import Profiler
 
 sys.path.append('/home/danillorp/Área de Trabalho/github/fema/src/')
 
@@ -35,7 +35,8 @@ def load_datasets():
     digits = datasets.load_digits()
     
     # Carregar MNIST
-    print('Loading dataset MNIST ...')
+    
+    """print('Loading dataset MNIST ...')
     mnist = fetch_openml('mnist_784', version=1)
     mnist_data = mnist.data
     mnist_target = mnist.target.astype(int)
@@ -55,7 +56,7 @@ def load_datasets():
     
     # Carregar CIFAR-100
     print('Loading dataset CIFAR-100 ...')
-    """cifar100 = CIFAR100(root='./data', train=True, download=True, transform=transform)
+    cifar100 = CIFAR100(root='./data', train=True, download=True, transform=transform)
     cifar100_data = torch.stack([data for data, _ in DataLoader(cifar100, batch_size=len(cifar100))]).squeeze()
     cifar100_target = np.array(cifar100.targets)
 
@@ -81,9 +82,6 @@ def load_datasets():
         'Iris': (iris.data, iris.target),
         'Wine': (wine.data, wine.target),
         'Digits': (digits.data, digits.target),
-        'MNIST': (mnist_data, mnist_target),
-        'KDD Cup 99': (kddcup_data, kddcup_target),
-        'CIFAR-10': (cifar10_data, cifar10_target),
       }
      
 # Função para normalizar e reduzir dimensionalidade
@@ -98,7 +96,7 @@ def preprocess_data(data):
 def apply_clustering_methods(data):
     clustering_methods = {
         'KMeans': KMeans(n_clusters=3, random_state=42),
-        'DBSCAN': DBSCAN(eps=0.5, min_samples=5),
+        #'DBSCAN': DBSCAN(eps=0.5, min_samples=5),
         #'Agglomerative': AgglomerativeClustering(n_clusters=3),
         #'GMM': GaussianMixture(n_components=3, random_state=42),
         #'Spectral': SpectralClustering(n_clusters=3, affinity='nearest_neighbors', random_state=42),
@@ -112,8 +110,8 @@ def apply_clustering_methods(data):
             labels = method.predict(data)
         elif method_name == 'FEMaClustering':
             print('FEMaClustering... ...')
-            method.fit(data,min_distance=0.2,qtd_samples_perc=0.25)
-            labels = method.predict(th_same_cluster=0.95,qtd_diff_samples=10)
+            method.fit(data,min_distance=0.2,qtd_samples_perc=0.5)
+            labels = method.predict(th_same_cluster=0.9,qtd_diff_samples=10)
         else:
             method.fit(data)
             labels = method.labels_
@@ -123,27 +121,19 @@ def apply_clustering_methods(data):
 
 # Função para calcular as métricas
 def calculate_metrics(data, labels_true, labels_pred):
-    try:
-        metrics = {
-            'Silhouette Score': silhouette_score(data, labels_pred),
-            'Davies-Bouldin Score': davies_bouldin_score(data, labels_pred),
-            'Adjusted Rand Index': adjusted_rand_score(labels_true, labels_pred),
-            'Normalized Mutual Information': normalized_mutual_info_score(labels_true, labels_pred)
-        }
-    except ValueError:
-        metrics = {
-            'Silhouette Score': np.nan,
-            'Davies-Bouldin Score': np.nan,
-            'Adjusted Rand Index': np.nan,
-            'Normalized Mutual Information': np.nan
-        }
+    metrics = {
+        'Silhouette Score': silhouette_score(data, labels_pred),
+        'Davies-Bouldin Score': davies_bouldin_score(data, labels_pred),
+        'Adjusted Rand Index': adjusted_rand_score(labels_true, labels_pred),
+        'Normalized Mutual Information': normalized_mutual_info_score(labels_true, labels_pred)
+    }
     return metrics
 
 
 # Supondo que as funções load_datasets, preprocess_data, apply_clustering_methods e calculate_metrics já existam
 
 preprocess_data_flag = True
-N = 2  # Número de repetições
+N = 10  # Número de repetições
 
 # Função principal para executar o experimento
 def main():
@@ -154,10 +144,10 @@ def main():
  #   profiler = Profiler()
  #   profiler.start()
     for repetition in range(N):
-        print("\nRepetition {repetition + 1}/{N}")
+        print(f"\nRepetition {repetition + 1}/{N}")
 
         for dataset_name, (data, target) in datasets.items():
-            print("\nProcessing ",dataset_name," dataset")
+            print(f"\nProcessing {dataset_name} dataset")
             print('INFO:', data.shape)
             
             if dataset_name in ['20 Newsgroups']:
@@ -184,17 +174,17 @@ def main():
                 result_row.update(metrics)
                 all_results.append(result_row)
 
-                print("\nResults for ",method_name," on ",dataset_name)
+                print(f"\nResults for {method_name} on {dataset_name}:")
                 for metric_name, metric_value in metrics.items():
-                    print(metric_name," ",metric_value)
+                    print(f"{metric_name}: {metric_value:.4f}")
 
                 if preprocess_data_flag:
                     plt.figure()  # Cria uma nova figura para cada método
                     plt.scatter(data_preprocessed[:, 0], data_preprocessed[:, 1], c=labels_pred)  # Plotar dados com cores de cluster
-                    plt.title("{method_name} on {dataset_name}")
+                    plt.title(f"{method_name} on {dataset_name}")
                     plt.xlabel("Component 1")
                     plt.ylabel("Component 2")
-                    plt.savefig(f"figs/"+dataset_name+"_"+method_name+"_rep"+str(repetition + 1)+".png")
+                    plt.savefig(f"figs/{dataset_name}_{method_name}_rep{repetition + 1}.png")
                 else:
                     print('NO PLOT {dataset_name}_{method_name}')
     # Salva todos os resultados em um arquivo CSV
