@@ -117,7 +117,7 @@ class FEMaClustering:
                 print(f'\rProgress Generating Points: {perc_comp:.2f}%', end='')
 
             # Generate candidate points
-            candidate_points = np.array([generate_random_point(bounds) for _ in range(10)])
+            candidate_points = np.array([generate_random_point(bounds) for _ in range(500)])
             
             # Calculate distances from candidate points to all current points
             distances = cdist(candidate_points, all_points, metric='euclidean')
