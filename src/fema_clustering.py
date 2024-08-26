@@ -191,7 +191,7 @@ class FEMaClustering:
         self.model = fema_classifier.FEMaClassifier(basis=self.basis)
         self.model.fit(self.all_samples, self.labels.reshape((len(self.labels), 1)))
 
-    def predict(self, th_same_cluster: float = 0.75, qtd_diff_samples: float = 50):
+    def predict(self, th_same_cluster: float = 0.75, qtd_diff_samples: float = 40):
         self.qtd_diff_samples = qtd_diff_samples
         self.th_same_cluster = th_same_cluster
 
@@ -209,7 +209,7 @@ class FEMaClustering:
             print(f'\rProgress: {percent_complete:.2f}%', end='')
             
             # Obter os índices dos 5 pontos mais próximos (excluindo o próprio i)
-            nearest_indices = np.argsort(distances)[1:11]  # 1:11 pega os 10 menores, ignorando a própria distância zero
+            nearest_indices = np.argsort(distances)[1:6]  # 1:11 pega os 10 menores, ignorando a própria distância zero
             
             # Processar apenas para os 5 pontos mais próximos
             for j in nearest_indices:
