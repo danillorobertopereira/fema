@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn import datasets
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering, SpectralClustering
 from sklearn.mixture import GaussianMixture
@@ -36,14 +36,15 @@ def load_datasets():
         return None, None
 
     datasets_dict = {}
-
-    # Adicionando novos datasets
-    print('Loading dataset Breast Cancer Wisconsin (Diagnostic) ...')
-    bc_wisconsin = datasets.load_breast_cancer()
-    data, target = filter_dataset(bc_wisconsin.data, bc_wisconsin.target)
+    # Carregar datasets do sklearn
+    
+    print('Loading dataset Iris ...')
+    iris = datasets.load_iris()
+    data, target = filter_dataset(iris.data, iris.target)
     if data is not None:
-        datasets_dict['Breast Cancer Wisconsin (Diagnostic)'] = (data, target)
+        datasets_dict['Iris'] = (data, target)
         print(data.shape[0],data.shape[1])
+
     
     print('Loading dataset Diabetes ...')
     diabetes = datasets.load_diabetes()
@@ -51,10 +52,6 @@ def load_datasets():
     if data is not None:
         datasets_dict['Diabetes'] = (data, target)
         print(data.shape[0],data.shape[1])
-    #kc1 1067
-    #pc1 1068
-    #dna 40670
-    #churn 40701
     
     print('Loading dataset kc1 ...')
     kc1 = fetch_openml(data_id=1067)
@@ -63,13 +60,7 @@ def load_datasets():
         datasets_dict['kc1'] = (data, target)
         print(data.shape[0],data.shape[1])
 
-    print('Loading dataset DNA ...')
-    dna = fetch_openml(data_id=40670)
-    data, target = filter_dataset(dna.data, dna.target)
-    if data is not None:
-        datasets_dict['dna'] = (data, target)
-        print(data.shape[0],data.shape[1])
-
+    
     print('Loading dataset Churn ...')
     churn = fetch_openml(data_id=40701)
     data, target = filter_dataset(churn.data, churn.target)
@@ -77,53 +68,6 @@ def load_datasets():
         datasets_dict['churn'] = (data, target)
         print(data.shape[0],data.shape[1])
 
-    """
-    print('Loading dataset Satelite ...')
-    satelite = fetch_openml(data_id=40900)
-    data, target = filter_dataset(satelite.data, satelite.target)
-    if data is not None:
-        datasets_dict['Satelite'] = (data, target)
-        print(data.shape[0],data.shape[1])
-
-    print('Loading dataset One-Hundred ...')
-    oneh = fetch_openml(data_id=1493)
-    data, target = filter_dataset(oneh.data, oneh.target)
-    if data is not None:
-        datasets_dict['One-Hundred'] = (data, target)
-        print(data.shape[0],data.shape[1])
-    """
-        
-    # Carregar datasets do sklearn
-    print('Loading dataset Iris ...')
-    iris = datasets.load_iris()
-    data, target = filter_dataset(iris.data, iris.target)
-    if data is not None:
-        datasets_dict['Iris'] = (data, target)
-        print(data.shape[0],data.shape[1])
-
-    print('Loading dataset Wine ...')
-    wine = datasets.load_wine()
-    data, target = filter_dataset(wine.data, wine.target)
-    if data is not None:
-        datasets_dict['Wine'] = (data, target)
-        print(data.shape[0],data.shape[1])
-    
-    print('Loading dataset California Housing ...')
-    cal_housing = fetch_openml(name='California', version=1, as_frame=False)
-    data, target = filter_dataset(cal_housing.data, cal_housing.target)
-    if data is not None:
-        datasets_dict['California Housing'] = (data, target)
-        print(data.shape[0],data.shape[1])
-    
-    # Adicionar dataset com aproximadamente 20.000 amostras
-    """print('Loading dataset Fashion MNIST (20,000 samples) ...')
-    fashion_mnist = fetch_openml('Fashion-MNIST', version=1, as_frame=False)
-    data, target = fashion_mnist.data, fashion_mnist.target.astype(int)
-    if data.shape[0] > 20000:
-        indices = np.random.choice(data.shape[0], 20000, replace=False)
-        data, target = data[indices], target[indices]
-    datasets_dict['Fashion MNIST (20,000 samples)'] = (data, target)
-    """
     # Carregar o dataset Digits por último
     print('Loading dataset Digits ...')
     digits = datasets.load_digits()
@@ -131,6 +75,31 @@ def load_datasets():
     if data is not None:
         datasets_dict['Digits'] = (data, target)
         print(data.shape[0],data.shape[1])
+    
+    
+    
+    print('Loading dataset Students Dropout ...')
+    student = fetch_openml(data_id=697)
+    data, target = filter_dataset(student.data, student.target)
+    if data is not None:
+        datasets_dict['Students Dropout'] = (data, target)
+        print(data.shape[0],data.shape[1])
+
+    print('Loading dataset Yeast ...')
+    yeast = fetch_openml(data_id=181)
+    data, target = filter_dataset(yeast.data, yeast.target)
+    if data is not None:
+        datasets_dict['Yeast'] = (data, target)
+        print(data.shape[0],data.shape[1])
+
+    
+    print('Loading dataset pc1 ...')
+    pc1 = fetch_openml(data_id=1068)
+    data, target = filter_dataset(pc1.data, pc1.target)
+    if data is not None:
+        datasets_dict['pc1'] = (data, target)
+        print(data.shape[0],data.shape[1])
+
 
     return datasets_dict
 
@@ -182,31 +151,29 @@ def generate_toy_datasets():
 
 # Função para normalizar e reduzir dimensionalidade
 def preprocess_data(data):
-    scaler = StandardScaler()
+    #scaler = StandardScaler()
+    scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data)
-    pca = PCA(n_components=2)
-    data_reduced = pca.fit_transform(data_scaled)
+    data_reduced = data_scaled.copy()
+    #pca = PCA(n_components=2)
+    #data_reduced = pca.fit_transform(data_scaled)
     return data_reduced
 
 # Função para aplicar métodos de clusterização
 def apply_clustering_methods(data):
     clustering_methods = {
         'KMeans': KMeans(n_clusters=3),
-        'DBSCAN': DBSCAN(eps=0.5, min_samples=5),
+        'DBSCAN': DBSCAN(eps=0.1, min_samples=5),
         'Agglomerative': AgglomerativeClustering(n_clusters=3),
         'GMM': GaussianMixture(n_components=3),
         'Spectral': SpectralClustering(n_clusters=3, affinity='nearest_neighbors'),
         'FEMaClustering-0.99': FEMaClustering(z=2),
-        'FEMaClustering-0.97': FEMaClustering(z=2),
         'FEMaClustering-0.95': FEMaClustering(z=2),
         'FEMaClustering-0.90': FEMaClustering(z=2),
         'FEMaClustering-0.85': FEMaClustering(z=2),
         'FEMaClustering-0.80': FEMaClustering(z=2),
-        'FEMaClustering-0.75': FEMaClustering(z=2),
         'FEMaClustering-0.70': FEMaClustering(z=2),
-        'FEMaClustering-0.65': FEMaClustering(z=2),
         'FEMaClustering-0.60': FEMaClustering(z=2),
-        'FEMaClustering-0.55': FEMaClustering(z=2),
         'FEMaClustering-0.50': FEMaClustering(z=2),
         
     }
@@ -223,7 +190,7 @@ def apply_clustering_methods(data):
 
         if method_name.startswith('FEMaClustering') and fema_trained == False:
             print('FEMaClustering... ...')
-            method.fit(data,min_distance=0.2,qtd_samples_perc=0.99)
+            method.fit(data,min_distance=0.2,qtd_samples_perc=0.9)
             fema_trained = True
             model_trained = method
 
@@ -314,8 +281,8 @@ def calculate_metrics(data, labels_true, labels_pred):
 
 # Supondo que as funções load_datasets, preprocess_data, apply_clustering_methods e calculate_metrics já existam
 
-preprocess_data_flag = False
-N = 10  # Número de repetições
+preprocess_data_flag = True
+N = 2  # Número de repetições
 is_toy = False
 
 # Função principal para executar o experimento
@@ -345,7 +312,7 @@ def main():
                 data = vectorizer.fit_transform(data).toarray()
             
             if preprocess_data_flag:
-                data_preprocessed = preprocess_data(data)
+                data_preprocessed = preprocess_data(data).copy()
             else:
                 data_preprocessed = data.copy()
 
@@ -372,7 +339,7 @@ def main():
                 if preprocess_data_flag or is_toy:
                     plt.figure()  # Cria uma nova figura para cada método
                     plt.scatter(data_preprocessed[:, 0], data_preprocessed[:, 1], c=labels_pred)  # Plotar dados com cores de cluster
-                    plt.title("{method_name} on {dataset_name}")
+                    plt.title(method_name+" on "+dataset_name)
                     plt.xlabel("Component 1")
                     plt.ylabel("Component 2")
                     plt.savefig(f"figs/"+dataset_name+"_"+"_rep"+str(repetition + 1)+method_name+".png")
@@ -392,4 +359,4 @@ if __name__ == "__main__":
 
 
 """Para o Silhouette Score e Davies-Bouldin Score, quanto maior o valor, melhor é o agrupamento.
-Para o ARI e NMI, quanto mais próximo de 1, melhor é a concordância entre os agrupamentos e os rótulos verdadeiros."""
+Para o Adjusted Rand Index e Normalized Mutual Information, quanto mais próximo de 1, melhor é a concordância entre os agrupamentos e os rótulos verdadeiros."""

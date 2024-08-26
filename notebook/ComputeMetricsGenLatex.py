@@ -4,7 +4,10 @@ from scipy.stats import ttest_ind
 
 # Carregar os dados do CSV
 #file_path = "/home/danillorp/Área de Trabalho/github/fema/notebook/clustering_results-FINAL-TOY.xlsx"
-file_path = "/home/danillorp/Área de Trabalho/github/fema/notebook/clustering_results-real-final.xlsx"
+#file_path = "/home/danillorp/Área de Trabalho/github/fema/notebook/clustering_results-real-final.xlsx"
+
+file_path = "/home/danillorp/Área de Trabalho/github/fema/notebook/expanded_dataset.xlsx"
+
 data = pd.read_excel(file_path)
 
 data = data.dropna()
