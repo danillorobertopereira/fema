@@ -21,6 +21,9 @@ from imblearn.under_sampling import RandomUnderSampler, TomekLinks, NearMiss
 from imblearn.combine import SMOTEENN, SMOTETomek
 import fema_classifier
 import fema_augmentor
+from imblearn.under_sampling import EditedNearestNeighbours as ENN
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Função para tratar features do tipo string
 def handle_string_features(data):
@@ -35,7 +38,7 @@ def handle_string_features(data):
     return data
 
 # Função para aplicar FEMaAugmentor com diferentes parâmetros e salvar as contagens
-def apply_fema_augmentation(train_x, train_y, th, scale, loc, basis, use_smart_sampling=False):
+def apply_fema_augmentation(train_x, train_y, th, scale, loc, basis, use_smart_sampling=False, apply_enn=False):
     original_counts = np.bincount(train_y)
     train_y = train_y.reshape((train_y.shape[0], 1))
     unique_classes, counts = np.unique(train_y, return_counts=True)
@@ -44,17 +47,31 @@ def apply_fema_augmentation(train_x, train_y, th, scale, loc, basis, use_smart_s
     
     if len(target_classes) > 0:
         augmentor = fema_augmentor.FEMaAugmentor(
-            k=0, basis=basis, th=th, scale=scale, loc=loc, 
-            target_classes=target_classes, use_smart_sampling=use_smart_sampling, z=2
+            k=0, basis=basis, th_min=th, th_max=th+0.5, scale=scale, loc=loc, 
+            target_classes=target_classes, use_smart_sampling=use_smart_sampling, apply_enn=False, z=2
         )
         augmentor.fit(train_x, train_y)
         new_samples, new_labels = augmentor.augment(N=int(len(target_classes) * counts.max()))
         if new_samples.shape[0] > 0: 
             train_x = np.vstack([train_x, new_samples])
             train_y = np.vstack([train_y, new_labels])
-    
+
     train_y = train_y.ravel()
     augmented_counts = np.bincount(train_y)
+
+    # Aplicar ENN se a flag estiver ativada e houver mais de uma classe no conjunto de dados
+    if apply_enn:
+        unique_classes_after, _ = np.unique(train_y, return_counts=True)
+        if len(unique_classes_after) > 1:
+            try:
+                enn = ENN()
+                train_x, train_y = enn.fit_resample(train_x, train_y)
+                augmented_counts = np.bincount(train_y)
+            except Exception as e:
+                print(f"Error applying ENN: {str(e)}")
+        else:
+            print("Skipping ENN as only one class is present after augmentation.")
+
     return train_x, train_y, original_counts, augmented_counts
 
 # Função para aplicar outras estratégias de tratamento de desbalanceamento e salvar as contagens
@@ -129,22 +146,19 @@ def main():
         #40685  # madelon
     ]
     
-    
-    classifiers = ['rf', 'svm', 'logistic', 'fema'] 
+    classifiers = ['rf', 'svm', 'logistic', 'fema']
     fema_parameters = [
-        {'th': 0.5,     'scale': 1.00,   'loc': 0.0},
-        {'th': 0.75,    'scale': 0.50,   'loc': 0.0},
-        {'th': 0.95,    'scale': 0.25,   'loc': 0.0},
-        {'th': 0.5,     'scale': 0.50,   'loc': 0.0},
-        {'th': 0.75,    'scale': 0.25,   'loc': 0.0},
-        {'th': 0.95,    'scale': 0.12,   'loc': 0.0},
+        {'th': 0.75, 'scale': 0.50, 'loc': 0.0},
+        {'th': 0.90, 'scale': 0.25, 'loc': 0.0},
+        {'th': 0.75, 'scale': 0.25, 'loc': 0.0},
+        {'th': 0.90, 'scale': 0.12, 'loc': 0.0},
     ]
-    
+
     bases = [
         fema_classifier.Basis.shepardBasis,
         fema_classifier.Basis.radialBasis,
     ]
-    
+
     resampling_strategies = {
         'No Resampling': None,
         'SMOTE': SMOTE(),
@@ -157,21 +171,21 @@ def main():
         'SMOTETomek': SMOTETomek(),
     }
 
-    N = 1  # Número de repetições do experimento
+    N = 2  # Número de repetições do experimento
     all_results = []
 
     for iteration in range(1, N + 1):
         for dataset_id in dataset_ids:
             dataset = fetch_openml(data_id=dataset_id)
             label_encoder = LabelEncoder()
-            
+
             dataset.data = handle_string_features(pd.DataFrame(dataset.data))
             dataset.target = label_encoder.fit_transform(dataset.target)
-            
+
             print(f"Evaluating dataset: {dataset_id}")
             print(f"Sample counts per class: {np.bincount(dataset.target)}")
-            
-            train_x, test_x, train_y, test_y = train_test_split(dataset.data, dataset.target, test_size=0.25)
+
+            train_x, test_x, train_y, test_y = train_test_split(dataset.data, dataset.target, test_size=0.25, stratify=dataset.target)
 
             scaler = StandardScaler()
             train_x = scaler.fit_transform(train_x)
@@ -184,31 +198,42 @@ def main():
                 metrics['iteration'] = iteration
                 metrics['augmentation'] = 'None'
                 metrics['original_counts'] = np.bincount(train_y)
+                metrics['th'] = None
+                metrics['scale'] = None
+                metrics['loc'] = None
+                metrics['enn'] = None
+                metrics['smart'] = None
                 all_results.append(metrics)
 
-            # Avaliar FEMaAugmentor com diferentes parâmetros e bases
+            # Avaliar FEMaAugmentor com diferentes parâmetros e bases, incluindo apply_enn
             for params in fema_parameters:
                 for basis in bases:
                     for use_smart in [False, True]:
-                        train_x_augmented, train_y_augmented, original_counts, augmented_counts = apply_fema_augmentation(
-                            train_x, train_y, th=params['th'], scale=params['scale'], loc=params['loc'], basis=basis, use_smart_sampling=use_smart
-                        )
-                        for clf in classifiers:
-                            metrics = evaluate_model(train_x_augmented, train_y_augmented, test_x, test_y, classifier=clf)
-                            metrics['dataset_id'] = dataset_id
-                            metrics['iteration'] = iteration
-                            smart_label = 'smart' if use_smart else 'default'
-                            basis_label = 'shepard' if basis == fema_classifier.Basis.shepardBasis else 'radial'
-                            metrics['augmentation'] = f"FEMaAugmentor_{basis_label}_{smart_label}_th{params['th']}_scale{params['scale']}_loc{params['loc']}"
-                            metrics['original_counts'] = original_counts
-                            metrics['augmented_counts'] = augmented_counts
-                            all_results.append(metrics)
+                        for apply_enn in [False, True]:
+                            train_x_augmented, train_y_augmented, original_counts, augmented_counts = apply_fema_augmentation(
+                                train_x, train_y, th=params['th'], scale=params['scale'], loc=params['loc'],
+                                basis=basis, use_smart_sampling=use_smart, apply_enn=apply_enn
+                            )
+                            for clf in classifiers:
+                                metrics = evaluate_model(train_x_augmented, train_y_augmented, test_x, test_y, classifier=clf)
+                                metrics['dataset_id'] = dataset_id
+                                metrics['iteration'] = iteration
+                                metrics['augmentation'] = f"FEMaAugmentor_{'shepard' if basis == fema_classifier.Basis.shepardBasis else 'radial'}_{'smart' if use_smart else 'default'}_{'enn' if apply_enn else 'no_enn'}"
+                                metrics['original_counts'] = original_counts
+                                metrics['augmented_counts'] = augmented_counts
+                                # Adicionar parâmetros como colunas
+                                metrics['th'] = params['th']
+                                metrics['scale'] = params['scale']
+                                metrics['loc'] = params['loc']
+                                metrics['enn'] = 'yes' if apply_enn else 'no'
+                                metrics['smart'] = 'yes' if use_smart else 'no'
+                                all_results.append(metrics)
 
             # Avaliar as demais estratégias de resampling
             for strategy_name, strategy in resampling_strategies.items():
                 if strategy is None:
                     continue  # Já avaliamos o caso de 'No Resampling' anteriormente
-                
+
                 train_x_resampled, train_y_resampled, original_counts, resampled_counts = apply_resampling_strategy(
                     strategy, train_x, train_y
                 )
@@ -219,10 +244,48 @@ def main():
                     metrics['augmentation'] = strategy_name
                     metrics['original_counts'] = original_counts
                     metrics['augmented_counts'] = resampled_counts
+                    # Adicionar colunas vazias para os parâmetros específicos do FEMaAugmentor
+                    metrics['th'] = None
+                    metrics['scale'] = None
+                    metrics['loc'] = None
+                    metrics['enn'] = None
+                    metrics['smart'] = None
                     all_results.append(metrics)
 
     results_df = pd.DataFrame(all_results)
     results_df.to_csv("evaluation_results.csv", index=False)
+    # Carregar os resultados
+    results_df = pd.read_csv("evaluation_results.csv")
+
+    # Configurações para os gráficos
+    sns.set(style="whitegrid")
+
+    # Obter todos os IDs de datasets únicos
+    dataset_ids = results_df['dataset_id'].unique()
+
+    # Obter todas as métricas que estão presentes no DataFrame
+    metric_columns = ['balanced_accuracy', 'f1_score']  # Adicione as métricas que você deseja plotar
+
+    # Iterar sobre cada dataset e cada métrica para gerar gráficos específicos
+    for dataset_id in dataset_ids:
+        dataset_results = results_df[results_df['dataset_id'] == dataset_id]
+        
+        for metric in metric_columns:
+            # Criar uma tabela pivô onde linhas são abordagens de desbalanceamento e colunas são classificadores
+            pivot_table = dataset_results.pivot_table(
+                index='augmentation', columns='classifier', values=metric, aggfunc='mean'
+            )
+            
+            # Gráfico: Mapa de calor (heatmap) para o dataset e métrica específica
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(pivot_table, annot=True, fmt=".3f", cmap="YlGnBu", cbar_kws={'label': metric.capitalize()})
+            plt.title(f'Comparação de Abordagens de Desbalanceamento por Classificador - Dataset {dataset_id} - {metric.capitalize()}')
+            plt.xlabel('Classificador')
+            plt.ylabel('Abordagem de Desbalanceamento')
+            plt.tight_layout()
+            plt.savefig(f'resampling_strategy_vs_classifier_{dataset_id}_{metric}.png')
+            plt.show()
+
 
 if __name__ == "__main__":
     main()
