@@ -87,12 +87,17 @@ class FEMaAugmentor:
         distances = cdist(minority_class_points, other_class_points, metric='euclidean')
         
         # Para cada ponto da classe minoritária, encontra o ponto mais próximo de outra classe
+        nearest_distances = np.min(distances, axis=1)
         nearest_indices = np.argmin(distances, axis=1)
         nearest_points = other_class_points[nearest_indices]
         
-        # Gera novos pontos no intervalo entre os pontos da classe minoritária e seus vizinhos mais próximos de outras classes
-        random_factors = np.random.uniform(low=0.2, high=0.8, size=nearest_points.shape)
-        new_samples = minority_class_points + random_factors * (nearest_points - minority_class_points)
+        # Gera novos pontos aleatoriamente dentro do raio da distância ao ponto mais próximo de outra classe
+        random_radii = np.random.uniform(low=0.0, high=1.0, size=nearest_distances.shape) * nearest_distances
+        random_directions = np.random.normal(size=nearest_points.shape)
+        random_directions /= np.linalg.norm(random_directions, axis=1, keepdims=True)  # Normaliza os vetores
+
+        # Calcula os novos pontos como deslocamentos dentro do raio do ponto mais próximo de outra classe
+        new_samples = minority_class_points + random_radii[:, np.newaxis] * random_directions
         
         # Adiciona um ruído gaussiano aos novos pontos
         noise = np.random.normal(loc=self.loc, scale=self.scale, size=new_samples.shape)
